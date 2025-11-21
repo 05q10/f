@@ -1,0 +1,113 @@
+   
+% --- FACTS --- 
+% Gender 
+male(tanay). 
+male(prayag). 
+male(pratham). 
+male(ashwin). 
+male(devang). 
+male(kewal). 
+female(dipal). 
+female(kripa). 
+female(hiral). 
+female(leia). 
+female(rupa). 
+% Parent-child relationships 
+father(ashwin, prayag). 
+father(prayag, tanay). 
+father(prayag, pratham). 
+father(prayag,leia). 
+father(devang,kewal). 
+father(devang,kripa). 
+mother(hiral, tanay). 
+mother(hiral, pratham). 
+mother(hiral, leia). 
+mother(rupa, prayag). 
+mother(dipal,kewal). 
+mother(dipal,kripa). 
+mother(rupa,dipal). 
+% Spousal relationships 
+husband(ashwin, rupa). 
+husband(prayag, hiral). 
+husband(devang,dipal). 
+husband(vipul,beena). 
+wife(hiral, prayag). 
+wife(rupa, ashwin). 
+wife(dipal,devang). 
+wife(beena,vipul). 
+% --- RULES --- 
+% Parent: either father or mother 
+parent(X, Y) :- father(X, Y). 
+parent(X, Y) :- mother(X, Y). 
+% Sibling: share at least one parent, not the same person 
+sibling(X, Y) :- 
+parent(Z, X), 
+parent(Z, Y), 
+X \= Y. 
+% Brother: male sibling 
+brother(X, Y) :- 
+male(X), 
+sibling(X, Y). 
+% Sister: female sibling 
+sister(X, Y) :- 
+female(X), 
+sibling(X, Y). 
+% Grandparent: parent of a parent 
+grandparent(X, Y) :- 
+parent(X, Z), 
+parent(Z, Y). 
+% Grandfather: male grandparent 
+grandfather(X, Y) :- 
+male(X), 
+grandparent(X, Y). 
+% Grandmother: female grandparent 
+grandmother(X, Y) :- 
+female(X), 
+grandparent(X, Y). 
+% --- NEW RELATIONSHIP RULES --- 
+% Uncle: brother of a parent or husband of an aunt 
+uncle(X, Y) :- 
+brother(X, P), 
+parent(P, Y). 
+uncle(X, Y) :- 
+husband(X, A), 
+aunt(A, Y). 
+% Aunt: sister of a parent or wife of an uncle 
+aunt(X, Y) :- 
+sister(X, P), 
+parent(P, Y). 
+aunt(X, Y) :- 
+wife(X, U), 
+uncle(U, Y). 
+% Niece: female child of a sibling 
+niece(X, Y) :- 
+female(X), 
+parent(P, X), 
+sibling(P, Y). 
+% Nephew: male child of a sibling 
+nephew(X, Y) :- 
+male(X), 
+parent(P, X), 
+sibling(P, Y). 
+% Cousin: child of your aunt or uncle 
+cousin(X, Y) :- 
+parent(P1, X), 
+parent(P2, Y), 
+sibling(P1, P2). 
+% relationship(X, Y, Relation) means "X is Relation of Y" 
+relationship(X, Y, father) :- father(X, Y). 
+relationship(X, Y, mother) :- mother(X, Y). 
+relationship(X, Y, parent) :- parent(X, Y). 
+relationship(X, Y, sibling) :- sibling(X, Y). 
+relationship(X, Y, brother) :- brother(X, Y). 
+relationship(X, Y, sister) :- sister(X, Y). 
+relationship(X, Y, grandparent) :- grandparent(X, Y). 
+relationship(X, Y, grandfather) :- grandfather(X, Y). 
+relationship(X, Y, grandmother) :- grandmother(X, Y). 
+relationship(X, Y, husband) :- husband(X, Y). 
+relationship(X, Y, wife) :- wife(X, Y). 
+relationship(X, Y, uncle) :- uncle(X, Y). 
+relationship(X, Y, aunt) :- aunt(X, Y). 
+relationship(X, Y, niece) :- niece(X, Y). 
+relationship(X, Y, nephew) :- nephew(X, Y). 
+relationship(X, Y, cousin) :- cousin(X, Y).

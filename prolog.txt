@@ -1,0 +1,28 @@
+% ---------- FACTS ----------
+brand(apple).
+brand(dell).
+brand(lenovo).
+brand(hp).
+
+purpose(gaming).
+purpose(programming).
+purpose(study).
+purpose(video_editing).
+
+% ---------- RULES ----------
+
+% Recommended laptop type depending on purpose
+recommend(programming, macbook) :- brand(apple).
+recommend(programming, thinkpad) :- brand(lenovo).
+
+recommend(gaming, alienware) :- brand(dell).
+recommend(gaming, omen) :- brand(hp).
+
+recommend(study, ideapad) :- brand(lenovo).
+recommend(study, pavilion) :- brand(hp).
+
+recommend(video_editing, macbook_pro) :- brand(apple).
+recommend(video_editing, hp_zbook) :- brand(hp).
+
+% General rule:
+suggest(Purpose, Laptop) :- recommend(Purpose, Laptop).

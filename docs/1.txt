@@ -1,0 +1,269 @@
+% FACTS
+banana_in_window(no).
+
+% RULES
+state1(Pos, Knowledge) :-
+    Pos = door,
+    Knowledge = unknown.
+
+state2(Pos, BananaPresence) :-
+    Pos = window,
+    banana_in_window(BananaPresence).
+
+state3(Action, BananaPresence) :-
+    ( BananaPresence = yes -> Action = eating
+    ; BananaPresence = no  -> Action = leaves
+    ).
+
+% Run scenario
+run :-
+    state1(Pos1, Know1),
+    format("State 1: Monkey is at ~w, knowledge: ~w~n", [Pos1, Know1]),
+
+    state2(Pos2, Know2),
+    format("State 2: Monkey moves to ~w, sees banana: ~w~n", [Pos2, Know2]),
+
+    state3(Action, Know2),
+    format("State 3: Monkey action: ~w (banana present: ~w)~n", [Action, Know2]).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% facts containing atoms/constants (rule-based)
+
+% spouse facts
+spouse_fact(rahul, sneha).
+spouse_fact(kavita, rohan).
+spouse_fact(meera, vikas).
+spouse_fact(priya, nikhil).
+spouse_fact(samar, ishita).
+
+% direct parent facts
+direct_parent(rahul, kavita).
+direct_parent(rahul, meera).
+direct_parent(rahul, priya).
+direct_parent(rahul, samar).
+
+direct_parent(sneha, kavita).
+direct_parent(sneha, meera).
+direct_parent(sneha, priya).
+direct_parent(sneha, samar).
+
+direct_parent(rohan, arjun).
+direct_parent(rohan, manav).
+
+direct_parent(vikas, rehan).
+direct_parent(vikas, kiara).
+
+direct_parent(nikhil, diya).
+
+direct_parent(samar, aarohi).
+
+direct_parent(kavita, arjun).
+
+direct_parent(meera, rehan).
+direct_parent(meera, kiara).
+
+direct_parent(priya, diya).
+
+direct_parent(ishita, aarohi).
+
+% ===== RULES =====
+
+spouse(X, Y) :- spouse_fact(X, Y).
+spouse(X, Y) :- spouse_fact(Y, X).
+
+parent(X, Y) :- direct_parent(X, Y).
+parent(X, Y) :- spouse(X, Z), direct_parent(Z, Y).
+
+grandparent(X, Y) :- parent(X, Z), parent(Z, Y).
+
+sibling(X, Y) :- parent(Z, X), parent(Z, Y), X \= Y, X @< Y.
+
+cousin(X, Y) :-
+    grandparent(Z, X), grandparent(Z, Y),
+    \+ sibling(X, Y), X \= Y.
+
+
+
+
+
+
+% spouse is symmetric
+spouse(X, Y) :- spouse_fact(X, Y).
+spouse(X, Y) :- spouse_fact(Y, X).
+
+% parent: biological OR through spouse
+parent(X, Y) :- direct_parent(X, Y).
+parent(X, Y) :- spouse(X, Z), direct_parent(Z, Y).
+
+% grandparent rule
+grandparent(X, Y) :-
+    parent(X, Z),
+    parent(Z, Y).
+
+% sibling rule (avoid duplicates using @<)
+sibling(X, Y) :-
+    parent(Z, X),
+    parent(Z, Y),
+    X \= Y,
+    X @< Y.
+
+% cousin rule
+cousin(X, Y) :-
+    grandparent(Z, X),
+    grandparent(Z, Y),
+    \+ sibling(X, Y),
+    X \= Y.
+
+% uncle/aunt
+uncle_or_aunt(X, Y) :-
+    parent(P, Y),
+    sibling(X, P).
+
+% uncle/aunt by marriage
+uncle_or_aunt(X, Y) :-
+    parent(P, Y),
+    spouse(X, S),
+    sibling(S, P).
+
+% nephew / niece
+nephew_or_niece(X, Y) :-
+    parent(P, X),
+    sibling(P, Y).
+
+% ancestor rule (recursive)
+ancestor(X, Y) :- parent(X, Y).
+ancestor(X, Y) :- parent(X, Z), ancestor(X, Z).
+
+
+
+
+% Monkey-Banana Problem – Full Version (full4)
+% State Representation:
+% state(MonkeyLocation, BoxLocation, MonkeyOnBox?, HasBanana?)
+
+% Initial state:
+% Monkey at door, box at window, monkey not on box, no banana.
+initial_state(state(door, window, no, no)).
+
+% Goal state: Monkey has the banana
+goal_state(state(_, _, _, yes)).
+
+
+% -------------------------
+% POSSIBLE ACTIONS
+% -------------------------
+
+% 1. Monkey walks to a new location
+move(state(_, Box, OnBox, HasBan),
+     walk(NewPos),
+     state(NewPos, Box, OnBox, HasBan)) :-
+    member(NewPos, [door, middle, window]).
+
+% 2. Monkey climbs onto box
+move(state(Pos, Pos, no, HasBan),
+     climb,
+     state(Pos, Pos, yes, HasBan)).
+
+% 3. Monkey climbs down from box
+move(state(Pos, Pos, yes, HasBan),
+     climb_down,
+     state(Pos, Pos, no, HasBan)).
+
+% 4. Monkey pushes the box to new position
+move(state(Pos, Pos, no, HasBan),
+     push(NewPos),
+     state(NewPos, NewPos, no, HasBan)) :-
+    member(NewPos, [door, middle, window]).
+
+% 5. Monkey grasps the banana (only if on box under banana)
+move(state(middle, middle, yes, no),
+     grasp,
+     state(middle, middle, yes, yes)).
+
+
+% -------------------------
+% SEARCH / PLAN GENERATOR
+% -------------------------
+
+solve :-
+    initial_state(Initial),
+    plan(Initial, [], Plan),
+    write('Solution Steps:'), nl,
+    print_steps(Plan).
+
+% If state is goal: stop and return plan
+plan(State, Plan, Plan) :-
+    goal_state(State),
+    !.
+
+% Try next action
+plan(State, CurrentPlan, FinalPlan) :-
+    move(State, Action, NewState),
+    \+ member((State -> Action), CurrentPlan),   % avoid loops
+    plan(NewState, [(State -> Action)|CurrentPlan], FinalPlan).
+
+
+% Print steps in order
+print_steps([]).
+print_steps([(S -> A)|Rest]) :-
+    print_steps(Rest),
+    write(S), write('  -->  '), write(A), nl.
+
+
+
+
+
+
+
+
+
+
+
+
+
+% Temperature Conversion 
+ 
+% Convert Celsius to Fahrenheit 
+c_to_f(Celsius, Fahrenheit) :- 
+    Fahrenheit is (Celsius * 9 / 5) + 32. 
+ 
+% Convert Fahrenheit to Celsius 
+f_to_c(Fahrenheit, Celsius) :- 
+    Celsius is (Fahrenheit - 32) * 5 / 9. 
+ 
+% Example interactive runner 
+run :- 
+    write('Enter temperature: '), read(Temp), 
+    write('Is this in (c)elsius or (f)ahrenheit? '), read(Unit), 
+    ( 
+ 
+        Unit = c -> 
+            c_to_f(Temp, F), 
+            format("~2f Celsius is ~2f Fahrenheit~n", [Temp, F]) 
+    ; 
+        Unit = f -> 
+            f_to_c(Temp, C), 
+            format("~2f Fahrenheit is ~2f Celsius~n", [Temp, C]) 
+    ; 
+        write('Unknown unit. Use c or f.'), nl 
+    ). 
+
+
+
+
+
